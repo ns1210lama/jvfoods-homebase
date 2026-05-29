@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": { "distDir": "build" }
+    }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "/index.html" }
+  ],
+  "env": {
+    "REACT_APP_SUPABASE_URL": "https://pxrrdqxdpeargvfndchp.supabase.co",
+    "REACT_APP_SUPABASE_ANON_KEY": "sb_publishable_ed4uq98_KrkTjEifh7RhTA_R8AhYPch"
+  }
+}
