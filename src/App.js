@@ -79,3 +79,51 @@ export default function App() {
           dbLoad("customers"),dbLoad("reps"),dbLoad("alerts"),
         ]);
         if(p.length===0){
+function CustomersPage({customers,orders,reps,currentRep}){
+  const [search,setSearch]=useState("");
+  const [selected,setSelected]=useState(null);
+  const filtered=customers.filter(c=>(currentRep?.role==="manager"||c.repId===currentRep?.id)&&(c.name.toLowerCase().includes(search.toLowerCase())));
+  return(
+    <div className="page">
+      <div className="section-header">
+        <div className="section-title">Customers</div>
+        <input placeholder="Search..." value={search} onChange={e=>setSearch(e.target.value)} style={{width:200,fontSize:12}}/>
+      </div>
+      <div className="card">
+        <table><thead><tr><th>Customer</th><th>Last Order</th><th>Status</th><th>Balance</th><th>Orders</th></tr></thead>
+        <tbody>{filtered.map(c=>{const days=daysSince(c.lastOrderDate);const sc=days>=21?"#c0392b":days>=14?"#d4800a":"#2e8b57";const sl=days>=21?"COLD":days>=14?"DORMANT":"ACTIVE";const co=orders.filter(o=>o.customerId===c.id);return(<tr key={c.id} style={{cursor:"pointer"}} onClick={()=>setSelected(c)}><td style={{fontWeight:500}}>{c.name}<br/><span style={{color:"#5a6b80",fontSize:10}}>{c.contact} · {c.phone}</span></td><td style={{fontSize:11}}>{c.lastOrderDate||"Never"}<br/><span style={{color:sc,fontSize:10}}>{days} days ago</span></td><td><span style={{color:sc,fontSize:10,fontWeight:600}}>{sl}</span></td><td style={{color:"#e8e6e0"}}>{fmtUSD(c.balance)}</td><td>{co.length}</td></tr>);})}</tbody>
+        </table>
+      </div>
+      {selected&&(
+        <div className="modal-overlay" onClick={()=>setSelected(null)}>
+          <div className="modal" style={{minWidth:500}} onClick={e=>e.stopPropagation()}>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:24,marginBottom:4}}>{selected.name}</div>
+            <div style={{color:"#5a6b80",fontSize:11,marginBottom:16}}>{selected.contact} · {selected.phone}</div>
+            <div className="grid2" style={{marginBottom:16}}>
+              <div className="stat-card"><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:24}}>{fmtUSD(selected.balance)}</div><div style={{fontSize:10,color:"#5a6b80",textTransform:"uppercase"}}>Balance</div></div>
+              <div className="stat-card"><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:24,color:"#2e8b57"}}>{fmtUSD(selected.creditLimit-selected.balance)}</div><div style={{fontSize:10,color:"#5a6b80",textTransform:"uppercase"}}>Available Credit</div></div>
+            </div>
+            <table><thead><tr><th>Order</th><th>Date</th><th>Total</th><th>Status</th></tr></thead>
+            <tbody>{orders.filter(o=>o.customerId===selected.id).map(o=><tr key={o.id}><td style={{color:"#4a9eda"}}>{o.id}</td><td style={{fontSize:11}}>{o.date}</td><td>{fmtUSD(o.lines.reduce((s,l)=>s+l.qty*l.price,0))}</td><td><span className={`tag ${o.status==="Invoiced"?"tag-blue":o.status==="Picked"?"tag-green":"tag-yellow"}`}>{o.status}</span></td></tr>)}</tbody></table>
+            <div style={{display:"flex",justifyContent:"flex-end",marginTop:16}}><button className="btn btn-ghost" onClick={()=>setSelected(null)}>Close</button></div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function VendorsPage({vendors,setVendors}){
+  const totalAP=vendors.reduce((s,v)=>s+(v.balance||0),0);
+  return(
+    <div className="page">
+      <div className="section-title">Vendor Payments</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,marginBottom:20}}>
+        <div className="stat-card" style={{borderTop:"3px solid #c0392b"}}><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#c0392b"}}>{fmtUSD(totalAP)}</div><div style={{fontSize:10,color:"#5a6b80",textTransform:"uppercase"}}>Total A/P</div></div>
+        <div className="stat-card" style={{borderTop:"3px solid #d4800a"}}><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#d4800a"}}>{vendors.filter(v=>{const d=Math.ceil((new Date(v.dueDate)-new Date())/86400000);return d>=0&&d<=7;}).length}</div><div style={{fontSize:10,color:"#5a6b80",textTransform:"uppercase"}}>Due Within 7 Days</div></div>
+        <div className="stat-card" style={{borderTop:"3px solid #c0392b"}}><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#c0392b"}}>{vendors.filter(v=>new Date(v.dueDate)<new Date()).length}</div><div style={{fontSize:10,color:"#5a6b80",textTransform:"uppercase"}}>Overdue</div></div>
+      </div>
+      <div className="card">
+        <table><thead><tr><th>Vendor</th><th>Contact</th><th>Terms</th><th>Balance</th><th>Due Date</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>{vendors.map(v=>{const d=Math.ceil((new Date(v.dueDate)-new Date())/86400000);const ov=d<0;const ds=!ov&&d<=7;return(<tr key={v.id}><td style={{fontWeight:500}}>{v.name}</td><td style={{fontSize:11,color:"#8a9bb0"}}>{v.contact}</td><td style={{color:"#8a9bb0"}}>{v.terms}</td><td style={{color:"#c0392b",fontWeight:600}}>{fmtUSD(v.balance)}</td><td style={{color:ov?"#c0392b":ds?"#d4800a":"#8a9bb0",fontSize:12}}>{v.dueDate}<br/><span style={{fontSize:10}}>{ov?`${Math.abs(d)} days overdue`:`${d} days`}</span></td><td><span className={`tag ${ov?"tag-red":ds?"tag-yellow":"
+
